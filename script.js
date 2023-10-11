@@ -1,16 +1,12 @@
 document.addEventListener('DOMContentLoaded', function () {
   const display = document.getElementById('display');
-  let currentInput = '';
-  let currentOperator = '';
-  let previousInput = '';
+  let currentInput = '0';
   let resultDisplayed = false;
 
   function clear() {
-    currentInput = '';
-    currentOperator = '';
-    previousInput = '';
+    currentInput = '0';
     resultDisplayed = false;
-    display.textContent = '0';
+    updateDisplay();
   }
 
   function updateDisplay() {
@@ -21,83 +17,66 @@ document.addEventListener('DOMContentLoaded', function () {
     if (resultDisplayed) {
       clear();
     }
-    if (number === '0' && currentInput === '0') {
-      return;
-    }
-    if (currentInput === '0' && number !== '0') {
+    if (currentInput === '0') {
       currentInput = number;
-    } else {
+    } else if (currentInput === '-0') {
+      currentInput = '-' + number;
+    } else if (currentInput !== '0' && !currentInput.startsWith('0')) {
       currentInput += number;
     }
     updateDisplay();
   }
 
   function handleOperatorClick(operator) {
-    if (resultDisplayed) {
-      previousInput = currentInput;
-      currentInput = '';
-      resultDisplayed = false;
-    }
-    if (currentOperator) {
-      evaluate();
-    }
-    currentOperator = operator;
-    previousInput = currentInput;
-    currentInput = '';
+  if (resultDisplayed) {
+    resultDisplayed = false;
   }
+  const lastChar = currentInput[currentInput.length - 1];
+  if ('+-*/'.includes(lastChar) && lastChar !== '-' && operator !== '-') {
+    currentInput = currentInput.slice(0, -1) + operator;
+  } else {
+    currentInput += operator;
+  }
+  updateDisplay();
+}
+
 
   function handleDecimalClick() {
-    if (resultDisplayed) {
-      clear();
-    }
-    if (!currentInput.includes('.')) {
-      currentInput += '.';
-    }
-    updateDisplay();
+  if (resultDisplayed) {
+    clear();
   }
+  if (!currentInput.includes('.')) {
+    currentInput += '.';
+  } else if (!currentInput.endsWith('.')) {
+    currentInput += '.';
+  }
+  updateDisplay();
+}
+
+
 
   function evaluate() {
-    const num1 = parseFloat(previousInput);
-    const num2 = parseFloat(currentInput);
-
-    switch (currentOperator) {
-      case '+':
-        currentInput = (num1 + num2).toString();
-        break;
-      case '-':
-        currentInput = (num1 - num2).toString();
-        break;
-      case '*':
-        currentInput = (num1 * num2).toString();
-        break;
-      case '/':
-        currentInput = (num1 / num2).toString();
-        break;
-      default:
-        break;
+    try {
+      currentInput = eval(currentInput).toString();
+      resultDisplayed = true;
+      updateDisplay();
+    } catch (error) {
+      currentInput = 'Error';
+      updateDisplay();
     }
-
-    currentOperator = '';
-    previousInput = '';
-    resultDisplayed = true;
-    updateDisplay();
   }
 
-  document.getElementById('clear').addEventListener('click', clear);
-  document.getElementById('divide').addEventListener('click', () => handleOperatorClick('/'));
-  document.getElementById('multiply').addEventListener('click', () => handleOperatorClick('*'));
-  document.getElementById('seven').addEventListener('click', () => handleNumberClick('7'));
-  document.getElementById('eight').addEventListener('click', () => handleNumberClick('8'));
-  document.getElementById('nine').addEventListener('click', () => handleNumberClick('9'));
-  document.getElementById('subtract').addEventListener('click', () => handleOperatorClick('-'));
-  document.getElementById('four').addEventListener('click', () => handleNumberClick('4'));
-  document.getElementById('five').addEventListener('click', () => handleNumberClick('5'));
-  document.getElementById('six').addEventListener('click', () => handleNumberClick('6'));
-  document.getElementById('add').addEventListener('click', () => handleOperatorClick('+'));
-  document.getElementById('one').addEventListener('click', () => handleNumberClick('1'));
-  document.getElementById('two').addEventListener('click', () => handleNumberClick('2'));
-  document.getElementById('three').addEventListener('click', () => handleNumberClick('3'));
-  document.getElementById('equals').addEventListener('click', evaluate);
-  document.getElementById('zero').addEventListener('click', () => handleNumberClick('0'));
+  const numberButtons = document.querySelectorAll('.btn:not(.operator)');
+  numberButtons.forEach(button => {
+    button.addEventListener('click', () => handleNumberClick(button.textContent));
+  });
+
+  const operatorButtons = document.querySelectorAll('.operator:not(#equals)');
+  operatorButtons.forEach(button => {
+    button.addEventListener('click', () => handleOperatorClick(button.textContent));
+  });
+
   document.getElementById('decimal').addEventListener('click', handleDecimalClick);
+  document.getElementById('clear').addEventListener('click', clear);
+  document.getElementById('equals').addEventListener('click', evaluate);
 });
